@@ -194,34 +194,26 @@ class MoistAir(object):
         # Set of the temperature value
         self._temperature = values[0]
         # Check if the entered value of relative humidity is between 0 and 1
-        if (values[1] < 0):
-            self._relative_humidity = 0.0
-            raise ValueError("Relative humidity must be between 0% and 100%!")
-        elif (values[1] > 1):
-            self._relative_humidity = 1.0
+        if (values[1] < 0) or (values[1] > 1):
             raise ValueError("Relative humidity must be between 0% and 100%!")
         else:
             self._relative_humidity = values[1]
         # Calculation of the corresponding specific humidity value
-        self._specific_humidity = HAPropsSI('W',
-                                            'P', self.pressure*1e5,
+        self._specific_humidity = HAPropsSI('W', 'P', self.pressure*1e5,
                                             'T', self.temperature+273.15,
                                             'R', self.relative_humidity)
         # Wet bulb temperature
-        self._wet_bulb_temperature = HAPropsSI('B',
-                                               'P', self.pressure*1e5,
+        self._wet_bulb_temperature = HAPropsSI('B', 'P', self.pressure*1e5,
                                                'T', self.temperature+273.15,
                                                'R', self.relative_humidity)\
                 -273.15
         # Dew point temperature
-        self._dew_point_temperature = HAPropsSI('D',
-                                                'P', self.pressure*1e5,
+        self._dew_point_temperature = HAPropsSI('D', 'P', self.pressure*1e5,
                                                 'T', self.temperature+273.15,
                                                 'R', self.relative_humidity)\
                 -273.15
         # Specific enthalpy, in kJ/kg
-        self._specific_enthalpy = HAPropsSI('H',
-                                            'P', self.pressure*1e5,
+        self._specific_enthalpy = HAPropsSI('H', 'P', self.pressure*1e5,
                                             'T', self.temperature+273.15,
                                             'R', self.relative_humidity)*1e-3
     @property
@@ -252,26 +244,22 @@ class MoistAir(object):
         else:
             self._wet_bulb_temperature = values[1] 
         # Calculation of the corresponding relative humidity
-        self._relative_humidity = HAPropsSI('R',
-                                            'P', self.pressure*1e5,
+        self._relative_humidity = HAPropsSI('R', 'P', self.pressure*1e5,
                                             'T', self.temperature+273.15,
                                             'B', self.wet_bulb_temperature\
                                             +273.15)
         # Calculation of the corresponding specific humidity value
-        self._specific_humidity = HAPropsSI('W',
-                                            'P', self.pressure*1e5,
+        self._specific_humidity = HAPropsSI('W', 'P', self.pressure*1e5,
                                             'T', self.temperature+273.15,
                                             'B', self.wet_bulb_temperature\
                                             +273.15)
         # Dew point temperature
-        self._dew_point_temperature = HAPropsSI('D',
-                                                'P', self.pressure*1e5,
+        self._dew_point_temperature = HAPropsSI('D', 'P', self.pressure*1e5,
                                                 'T', self.temperature+273.15,
                                                 'B', self.wet_bulb_temperature\
                                                 +273.15)-273.15
         # Specific enthalpy, in kJ/kg
-        self._specific_enthalpy = HAPropsSI('H',
-                                            'P', self.pressure*1e5,
+        self._specific_enthalpy = HAPropsSI('H', 'P', self.pressure*1e5,
                                             'T', self.temperature+273.15,
                                             'B', self.wet_bulb_temperature\
                                             +273.15)*1e-3
@@ -281,7 +269,7 @@ class MoistAir(object):
         Wet and dry bulb temperatures as entered properties of the moist air.
         """
         return self.wet_bulb_temperature, self.temperature
-    @RT.setter
+    @BT.setter
     def BT(self, values):
         self.TB = values[::-1]
     # Dry and dew point temperatures as entered properties --------------------
@@ -302,26 +290,22 @@ class MoistAir(object):
         else:
             self._dew_point_temperature = values[1] 
         # Calculation of the corresponding relative humidity
-        self._relative_humidity = HAPropsSI('R',
-                                            'P', self.pressure*1e5,
+        self._relative_humidity = HAPropsSI('R', 'P', self.pressure*1e5,
                                             'T', self.temperature+273.15,
                                             'D', self.dew_point_temperature\
                                             +273.15)
         # Calculation of the corresponding specific humidity value
-        self._specific_humidity = HAPropsSI('W',
-                                            'P', self.pressure*1e5,
+        self._specific_humidity = HAPropsSI('W', 'P', self.pressure*1e5,
                                             'T', self.temperature+273.15,
                                             'D', self.dew_point_temperature\
                                             +273.15)
         # Dew point temperature
-        self._wet_bulb_temperature = HAPropsSI('B',
-                                               'P', self.pressure*1e5,
+        self._wet_bulb_temperature = HAPropsSI('B', 'P', self.pressure*1e5,
                                                'T', self.temperature+273.15,
                                                'D', self.dew_point_temperature\
                                                +273.15)-273.15
         # Specific enthalpy, in kJ/kg
-        self._specific_enthalpy = HAPropsSI('H',
-                                            'P', self.pressure*1e5,
+        self._specific_enthalpy = HAPropsSI('H', 'P', self.pressure*1e5,
                                             'T', self.temperature+273.15,
                                             'D', self.dew_point_temperature\
                                             +273.15)*1e-3
@@ -335,6 +319,356 @@ class MoistAir(object):
     @DT.setter
     def DT(self, values):
         self.TD = values[::-1]
+    # Relative humidity and wet bulb temperature as entered properties --------
+    @property
+    def RB(self):
+        """
+        Relative humidity and wet bulb temperature as entered properties of the
+        moist air.
+        """
+        return self.relative_humidity, self.wet_bulb_temperature
+    @RB.setter
+    def RB(self, values):
+        # Set of the wet bulb temperature value
+        self._wet_bulb_temperature = values[1]
+        # Check if the entered value of relative humidity is between 0 and 1
+        if (values[0] < 0) or (values[0] > 1):
+            raise ValueError("Relative humidity must be between 0% and 100%!")
+        else:
+            self._relative_humidity = values[0]
+        # Calculation of the corresponding dry bulb temperature
+        self._temperature = HAPropsSI('T', 'P', self.pressure*1e5,
+                                      'R', self.relative_humidity,
+                                      'B', self.wet_bulb_temperature\
+                                      +273.15)-273.15
+        # Calculation of the corresponding specific humidity value
+        self._specific_humidity = HAPropsSI('W', 'P', self.pressure*1e5,
+                                            'R', self.relative_humidity,
+                                            'B', self.wet_bulb_temperature\
+                                            +273.15)
+        # Dew point temperature
+        self._dew_point_temperature = HAPropsSI('D', 'P', self.pressure*1e5,
+                                                'R', self.relative_humidity,
+                                                'B', self.wet_bulb_temperature\
+                                                +273.15)-273.15
+        # Specific enthalpy, in kJ/kg
+        self._specific_enthalpy = HAPropsSI('H', 'P', self.pressure*1e5,
+                                            'R', self.relative_humidity,
+                                            'B', self.wet_bulb_temperature\
+                                            +273.15)*1e-3
+    @property
+    def BR(self):
+        """
+        Wet bulb temperature and relative humidity as entered properties of the
+        moist air.
+        """
+        return self.wet_bulb_temperature, self.relative_humidity
+    @BR.setter
+    def BR(self, values):
+        self.RB = values[::-1]
+    # Relative humidity and dew point temperature as entered properties --------
+    @property
+    def RD(self):
+        """
+        Relative humidity and dew point temperature as entered properties of the
+        moist air.
+        """
+        return self.relative_humidity, self.dew_point_temperature
+    @RD.setter
+    def RD(self, values):
+        # Set of the dew point temperature value
+        self._dew_point_temperature = values[1]
+        # Check if the entered value of relative humidity is between 0 and 1
+        if (values[0] < 0) or (values[0] > 1):
+            raise ValueError("Relative humidity must be between 0% and 100%!")
+        else:
+            self._relative_humidity = values[0]
+        # Calculation of the corresponding dry bulb temperature
+        self._temperature = HAPropsSI('T', 'P', self.pressure*1e5,
+                                      'R', self.relative_humidity,
+                                      'D', self.dew_point_temperature\
+                                      +273.15)-273.15
+        # Calculation of the corresponding specific humidity value
+        self._specific_humidity = HAPropsSI('W', 'P', self.pressure*1e5,
+                                            'R', self.relative_humidity,
+                                            'D', self.dew_point_temperature\
+                                            +273.15)
+        # Wet bulb temperature
+        self._wet_bulb_temperature = HAPropsSI('B', 'P', self.pressure*1e5,
+                                               'R', self.relative_humidity,
+                                               'D', self.dew_point_temperature\
+                                               +273.15)-273.15
+        # Specific enthalpy, in kJ/kg
+        self._specific_enthalpy = HAPropsSI('H', 'P', self.pressure*1e5,
+                                            'R', self.relative_humidity,
+                                            'D', self.dew_point_temperature\
+                                            +273.15)*1e-3
+    @property
+    def DR(self):
+        """
+        Dew point temperature and relative humidity as entered properties of the
+        moist air.
+        """
+        return self.dew_point_temperature, self.relative_humidity
+    @DR.setter
+    def DR(self, values):
+        self.RD = values[::-1]
+    # Wet bulb and dew point temperatures as entered properties ---------------
+    @property
+    def BD(self):
+        """
+        Wet bulb and dew point temperatures as entered properties of the moist
+        air.
+        """
+        return self.wet_bulb_temperature, self.dew_point_temperature
+    @BD.setter
+    def BD(self, values):
+        # Set of the wet bulb temperature value
+        self._wet_bulb_temperature = values[0]
+        # Set of the dew point temperature value
+        self._dew_point_temperature = values[1]
+        # Calculation of the corresponding dry bulb temperature
+        self._temperature = HAPropsSI('T', 'P', self.pressure*1e5,
+                                      'B', self.wet_bulb_temperature+273.15,
+                                      'D', self.dew_point_temperature+273.15)\
+                -273.15
+        # Relative humidity     
+        self._relative_humidity = HAPropsSI('R', 'P', self.pressure*1e5,
+                                            'B', self.wet_bulb_temperature\
+                                            +273.15,
+                                            'D', self.dew_point_temperature\
+                                            +273.15)
+        # Calculation of the corresponding specific humidity value
+        self._specific_humidity = HAPropsSI('W', 'P', self.pressure*1e5,
+                                            'B', self.wet_bulb_temperature\
+                                            +273.15,
+                                            'D', self.dew_point_temperature\
+                                            +273.15)
+        # Specific enthalpy, in kJ/kg
+        self._specific_enthalpy = HAPropsSI('H', 'P', self.pressure*1e5,
+                                            'B', self.wet_bulb_temperature\
+                                            +273.15,
+                                            'D', self.dew_point_temperature\
+                                            +273.15)*1e-3
+    @property
+    def DB(self):
+        """
+        Dew point and wet bulb temperatures humidity as entered properties of
+        the moist air.
+        """
+        return self.dew_point_temperature, self.wet_bulb_temperature
+    @DB.setter
+    def DB(self, values):
+        self.BD = values[::-1]
+    # Dry temperature and specific humidity as entered properties -------------
+    @property
+    def TW(self):
+        """
+        Dry temperature and specific humidity as entered properties of the moist
+        air.
+        """
+        return self.temperature, self.specific_humidity
+    @TW.setter
+    def TW(self, values):
+        # Set of the dry temperature value
+        self._temperature = values[0] 
+        # Check if the entered value of specific humidity makes sense, so if it
+        # is between 0 and its maximum value when saturation is reached at the
+        # same dry temperature
+        wmax = HAPropsSI('W', 'P', self.pressure*1e5, 'R', 1.0,\
+                         'T', values[0]+273.15)
+        if (values[1] < 0):
+            raise ValueError("Specific humidity is positive")
+        elif (values[1] > wmax):
+            raise ValueError("Specific humidity is higher than at saturation")
+        else:
+            # Set of the specific humidity value
+            self._specific_humidity = values[1]
+        # Relative humidity     
+        self._relative_humidity = HAPropsSI('R', 'P', self.pressure*1e5,
+                                            'T', self.temperature+273.15,
+                                            'W', self.specific_humidity)
+        # Calculation of the corresponding wet bulb temperature 
+        self._wet_bulb_temperature = HAPropsSI('B', 'P', self.pressure*1e5,
+                                               'T', self.temperature+273.15,
+                                               'W',
+                                               self.specific_humidity)-273.15
+        # Calculation of the corresponding dew point temperature 
+        self._dew_point_temperature = HAPropsSI('D', 'P', self.pressure*1e5,
+                                                'T', self.temperature+273.15,
+                                                'W', self.specific_humidity)\
+                -273.15
+        # Specific enthalpy, in kJ/kg
+        self._specific_enthalpy = HAPropsSI('H', 'P', self.pressure*1e5,
+                                            'T', self.temperature+273.15,
+                                            'W', self.specific_humidity)*1e-3
+    @property
+    def WT(self):
+        """
+        Specific humidity and dry temperature as entered properties of the moist
+        air.
+        """
+        return self.specific_humidity, self.temperature
+    @WT.setter
+    def WT(self, values):
+        self.TW = values[::-1]
+    # Relative and specific humidities as entered parameters ------------------
+    @property
+    def RW(self):
+        """
+        Relative and specific humidities as entered properties of the moist
+        air.
+        """
+        return self.relative_humidity, self.specific_humidity
+    @RW.setter
+    def RW(self, values):
+        # Check if the entered value of relative humidity is between 0 and 1
+        if (values[0] < 0) or (values[0] > 1):
+            raise ValueError("Relative humidity must be between 0% and 100%!")
+        else:
+            self._relative_humidity = values[0]
+        # Check if the entered value of specific humidity makes sense
+        if (values[1] < 0):
+            raise ValueError("Specific humidity is positive")
+        else:
+            # Set of the specific humidity value
+            self._specific_humidity = values[1]
+        # Dry temperature
+        self._temperature = HAPropsSI('T', 'P', self.pressure*1e5,
+                                      'R', self.relative_humidity,
+                                      'W', self.specific_humidity)-273.15
+        # Calculation of the corresponding wet bulb temperature 
+        self._wet_bulb_temperature = HAPropsSI('B', 'P', self.pressure*1e5,
+                                               'R', self.relative_humidity,
+                                               'W', self.specific_humidity)\
+                -273.15
+        # Calculation of the corresponding dew point temperature 
+        self._dew_point_temperature = HAPropsSI('D', 'P', self.pressure*1e5,
+                                                'R', self.relative_humidity,
+                                                'W', self.specific_humidity)\
+                -273.15
+        # Specific enthalpy, in kJ/kg
+        self._specific_enthalpy = HAPropsSI('H', 'P', self.pressure*1e5,
+                                            'T', self.temperature+273.15,
+                                            'W', self.specific_humidity)*1e-3
+    @property
+    def WR(self):
+        """
+        Specific and relative humidities as entered properties of the moist
+        air.
+        """
+        return self.specific_humidity, self.temperature
+    @WR.setter
+    def WR(self, values):
+        self.RW = values[::-1] 
+    # Wet bulb temperature and specific humidity as entered properties -------------
+    @property
+    def BW(self):
+        """
+        Wet bulb temperature and specific humidity as entered properties of the
+        moist air.
+        """
+        return self.wet_bulb_temperature, self.specific_humidity
+    @BW.setter
+    def BW(self, values):
+        # Set of the wet bulb temperature value
+        self._wet_bulb_temperature = values[0] 
+        # Check if the entered value of specific humidity makes sense, so if it
+        # is between 0 and its maximum value when saturation is reached at the
+        # same dry temperature
+        wmax = HAPropsSI('W', 'P', self.pressure*1e5, 'R', 1.0,\
+                         'B', values[0]+273.15)
+        if (values[1] < 0):
+            raise ValueError("Specific humidity is positive")
+        elif (values[1] > wmax):
+            raise ValueError("Specific humidity is higher than at saturation")
+        else:
+            # Set of the specific humidity value
+            self._specific_humidity = values[1]
+        # Dry temperature 
+        self._temperature = HAPropsSI('T', 'P', self.pressure*1e5,
+                                      'B', self.wet_bulb_temperature+273.15,
+                                      'W', self.specific_humidity)-273.15
+        # Relative humidity     
+        self._relative_humidity = HAPropsSI('R', 'P', self.pressure*1e5,
+                                            'B', self.wet_bulb_temperature\
+                                            +273.15,
+                                            'W', self.specific_humidity)
+        # Calculation of the corresponding dew point temperature 
+        self._dew_point_temperature = HAPropsSI('D', 'P', self.pressure*1e5,
+                                                'B', self.wet_bulb_temperature\
+                                                +273.15,
+                                                'W', self.specific_humidity)\
+                -273.15
+        # Specific enthalpy, in kJ/kg
+        self._specific_enthalpy = HAPropsSI('H', 'P', self.pressure*1e5,
+                                            'B', self.wet_bulb_temperature\
+                                            +273.15,
+                                            'W', self.specific_humidity)*1e-3
+    @property
+    def WB(self):
+        """
+        Specific humidity and wet bulb temperature as entered properties of the
+        moist air.
+        """
+        return self.specific_humidity, self.wet_bulb_temperature
+    @WB.setter
+    def WB(self, values):
+        self.BW = values[::-1]
+    # Dew point temperature and specific humidity as entered properties -------
+    @property
+    def DW(self):
+        """
+        Dew point temperature and specific humidity as entered properties of the
+        moist air.
+        """
+        return self.dew_point_temperature, self.specific_humidity
+    @DW.setter
+    def DW(self, values):
+        # Set of the dew point temperature value
+        self._dew_point_temperature = values[0] 
+        # Check if the entered value of specific humidity makes sense, so if it
+        # is between 0 and its maximum value when saturation is reached at the
+        # same dry temperature
+        wmax = HAPropsSI('W', 'P', self.pressure*1e5, 'R', 1.0,\
+                         'D', values[0]+273.15)
+        if (values[1] < 0):
+            raise ValueError("Specific humidity is positive")
+        elif (values[1] > wmax):
+            raise ValueError("Specific humidity is higher than at saturation")
+        else:
+            # Set of the specific humidity value
+            self._specific_humidity = values[1]
+        # Dry temperature 
+        self._temperature = HAPropsSI('T', 'P', self.pressure*1e5,
+                                      'D', self.dew_point_temperature+273.15,
+                                      'W', self.specific_humidity)-273.15
+        # Relative humidity     
+        self._relative_humidity = HAPropsSI('R', 'P', self.pressure*1e5,
+                                            'D', self.dew_point_temperature\
+                                            +273.15,
+                                            'W', self.specific_humidity)
+        # Calculation of the corresponding wet bulb temperature 
+        self._wet_bulb_temperature = HAPropsSI('B', 'P', self.pressure*1e5,
+                                               'D', self.dew_point_temperature\
+                                               +273.15,
+                                               'W', self.specific_humidity)\
+                -273.15
+        # Specific enthalpy, in kJ/kg
+        self._specific_enthalpy = HAPropsSI('H', 'P', self.pressure*1e5,
+                                            'D', self.dew_point_temperature\
+                                            +273.15,
+                                            'W', self.specific_humidity)*1e-3
+    @property
+    def WD(self):
+        """
+        Specific humidity and dew point temperature as entered properties of the
+        moist air.
+        """
+        return self.specific_humidity, self.dew_point_temperature
+    @WD.setter
+    def WD(self, values):
+        self.DW = values[::-1]
 
 if __name__ == '__main__':
     inside = MoistAir()
