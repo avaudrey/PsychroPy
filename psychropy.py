@@ -90,6 +90,11 @@ class MoistAir(object):
                                             'P', self.pressure*1e5,
                                             'T', self.temperature+273.15,
                                             'R', self.relative_humidity)*1e-3
+        # Specific volume, in m3/kg 
+        self._specific_volume = HAPropsSI('V',
+                                          'P', self.pressure*1e5,
+                                          'T', self.temperature+273.15,
+                                          'R', self.relative_humidity)
     # ==== Single properties of moist air =====================================
     # At least two values being required to identify unambiguously the state of
     # a given moist air, any new moist air must be entered thanks to a couple of
@@ -179,6 +184,19 @@ class MoistAir(object):
         print(single_parameter_set_message)
     @specific_enthalpy.deleter
     def specific_enthalpy(self):
+        raise AttributeError("Can't delete attribute") 
+    # ---- Specific volume ----------------------------------------------------
+    @property
+    def specific_volume(self):
+        """
+        Specific volume of moist air, in m^3/kg.
+        """
+        return self._specific_enthalpy
+    @specific_volume.setter
+    def specific_volume(self):
+        print(single_parameter_set_message)
+    @specific_volume.deleter
+    def specific_volume(self):
         raise AttributeError("Can't delete attribute")
     # ==== Couples of parameters to set the moist air physical properties =====
     # Dry temperature and relative humidity as entered parameters -------------
@@ -216,6 +234,10 @@ class MoistAir(object):
         self._specific_enthalpy = HAPropsSI('H', 'P', self.pressure*1e5,
                                             'T', self.temperature+273.15,
                                             'R', self.relative_humidity)*1e-3
+        # Specific volume, in m^3/kg
+        self._specific_volume = HAPropsSI('V', 'P', self.pressure*1e5,
+                                          'T', self.temperature+273.15,
+                                          'R', self.relative_humidity)
     @property
     def RT(self):
         """
@@ -262,7 +284,12 @@ class MoistAir(object):
         self._specific_enthalpy = HAPropsSI('H', 'P', self.pressure*1e5,
                                             'T', self.temperature+273.15,
                                             'B', self.wet_bulb_temperature\
-                                            +273.15)*1e-3
+                                            +273.15)*1e-3 
+        # Specific volume, in m^3/kg
+        self._specific_volume = HAPropsSI('V', 'P', self.pressure*1e5,
+                                          'T', self.temperature+273.15,
+                                          'B', self.wet_bulb_temperature\
+                                          +273.15)
     @property
     def BT(self):
         """
@@ -309,6 +336,11 @@ class MoistAir(object):
                                             'T', self.temperature+273.15,
                                             'D', self.dew_point_temperature\
                                             +273.15)*1e-3
+        # Specific volume, in m^3/kg
+        self._specific_volume = HAPropsSI('V', 'P', self.pressure*1e5,
+                                          'T', self.temperature+273.15,
+                                          'D', self.dew_point_temperature\
+                                          +273.15)
     @property
     def DT(self):
         """
@@ -355,7 +387,12 @@ class MoistAir(object):
         self._specific_enthalpy = HAPropsSI('H', 'P', self.pressure*1e5,
                                             'R', self.relative_humidity,
                                             'B', self.wet_bulb_temperature\
-                                            +273.15)*1e-3
+                                            +273.15)*1e-3 
+        # Specific volume, in m^3/kg
+        self._specific_volume = HAPropsSI('V', 'P', self.pressure*1e5,
+                                          'R', self.relative_humidity,
+                                          'B', self.wet_bulb_temperature\
+                                          +273.15)
     @property
     def BR(self):
         """
@@ -403,6 +440,11 @@ class MoistAir(object):
                                             'R', self.relative_humidity,
                                             'D', self.dew_point_temperature\
                                             +273.15)*1e-3
+        # Specific volume, in m^3/kg
+        self._specific_volume = HAPropsSI('V', 'P', self.pressure*1e5,
+                                          'R', self.relative_humidity,
+                                          'D', self.dew_point_temperature\
+                                          +273.15)
     @property
     def DR(self):
         """
@@ -450,6 +492,11 @@ class MoistAir(object):
                                             +273.15,
                                             'D', self.dew_point_temperature\
                                             +273.15)*1e-3
+        # Specific volume, in m^3/kg
+        self._specific_volume = HAPropsSI('V', 'P', self.pressure*1e5,
+                                          'B', self.wet_bulb_temperature+273.15,
+                                          'D', self.dew_point_temperature\
+                                          +273.15)
     @property
     def DB(self):
         """
@@ -502,6 +549,10 @@ class MoistAir(object):
         self._specific_enthalpy = HAPropsSI('H', 'P', self.pressure*1e5,
                                             'T', self.temperature+273.15,
                                             'W', self.specific_humidity)*1e-3
+        # Specific volume, in m^3/kg
+        self._specific_volume = HAPropsSI('V', 'P', self.pressure*1e5,
+                                          'T', self.temperature+273.15,
+                                          'W', self.specific_humidity)
     @property
     def WT(self):
         """
@@ -549,8 +600,12 @@ class MoistAir(object):
                 -273.15
         # Specific enthalpy, in kJ/kg
         self._specific_enthalpy = HAPropsSI('H', 'P', self.pressure*1e5,
-                                            'T', self.temperature+273.15,
+                                            'R', self.relative_humidity,
                                             'W', self.specific_humidity)*1e-3
+        # Specific volume, in m^3/kg
+        self._specific_volume = HAPropsSI('V', 'P', self.pressure*1e5,
+                                          'R', self.relative_humidity,
+                                          'W', self.specific_humidity)
     @property
     def WR(self):
         """
@@ -605,6 +660,10 @@ class MoistAir(object):
                                             'B', self.wet_bulb_temperature\
                                             +273.15,
                                             'W', self.specific_humidity)*1e-3
+        # Specific volume, in m^3/kg
+        self._specific_volume = HAPropsSI('V', 'P', self.pressure*1e5,
+                                          'B', self.wet_bulb_temperature+273.15,
+                                          'W', self.specific_humidity)
     @property
     def WB(self):
         """
@@ -659,6 +718,11 @@ class MoistAir(object):
                                             'D', self.dew_point_temperature\
                                             +273.15,
                                             'W', self.specific_humidity)*1e-3
+        # Specific volume, in m^3/kg
+        self._specific_volume = HAPropsSI('V', 'P', self.pressure*1e5,
+                                          'D', self.dew_point_temperature\
+                                          +273.15,
+                                          'W', self.specific_humidity)
     @property
     def WD(self):
         """
@@ -682,8 +746,6 @@ if __name__ == '__main__':
 #            # TODO : check the actual available temperature range of the
 #            # CoolProp package.
 #            if value <= -273.15:
-#                raise ValueError("Temperature must higher than the absolute\
-#                                 zero!")
 #            else:
 #                if isinstance(value, int):
 #                    value = float(value)
