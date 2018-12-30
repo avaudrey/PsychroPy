@@ -24,10 +24,13 @@ Author: alexandre.vaudrey@gmail.com
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.   |
 #---------------------------------------------------------------------------|
 
+import numpy as np
 # Properties of humid air
 from CoolProp.CoolProp import HAPropsSI
 # Value of one atmosphere in bar
 ATM = 1.01325
+# Ratio of the water molar mass on the dry air one
+ALPHAW = 0.621957
 
 # Dictionnary of properties
 properties = {'R':'relative_humidity',
@@ -62,6 +65,12 @@ class MoistAir(object):
     def __init__(self):
         # Name of the state
         self.name = 'State 1'
+        # When the class is involved in computations dealing with a large amount
+        # of data, the below attribute can be switched to True in order to
+        # accelerate the calculation is avoiding as far as possible the use of
+        # the CoolProp package. Obtained results are usually a little bit less
+        # accurate than the ones obtained by Coolprop
+        self.fast_computation = False
         # Pressure, in bar
         self.pressure = 1*ATM
         # Temperature, in °C
@@ -95,6 +104,19 @@ class MoistAir(object):
                                           'P', self.pressure*1e5,
                                           'T', self.temperature+273.15,
                                           'R', self.relative_humidity)
+    # Static functions ========================================================
+    @staticmethod
+    def __equilibrium_vapor_pressure(temperature):
+        """
+        Saturation or equilibrium pressure of water, in Pa.
+        """
+        # TODO: Find the original reference where this equation actually comes
+        # from.
+        # [ref?] equation that gives a value of the equilibrium pressure of
+        # water with a maximum difference of 0.6% (when compared with CoolProp)
+        # on a temperature range such as 5°C < T < 100°C. This equation is used
+        # when fast computation are required.
+        return 1e5*np.exp(11.78*(temperature-99.64)/(temperature+230))
     # ==== Single properties of moist air =====================================
     # At least two values being required to identify unambiguously the state of
     # a given moist air, any new moist air must be entered thanks to a couple of
@@ -265,31 +287,65 @@ class MoistAir(object):
             raise ValueError("Wet bulb temperature is lower than the dry one!")
         else:
             self._wet_bulb_temperature = values[1] 
-        # Calculation of the corresponding relative humidity
-        self._relative_humidity = HAPropsSI('R', 'P', self.pressure*1e5,
-                                            'T', self.temperature+273.15,
-                                            'B', self.wet_bulb_temperature\
-                                            +273.15)
-        # Calculation of the corresponding specific humidity value
-        self._specific_humidity = HAPropsSI('W', 'P', self.pressure*1e5,
-                                            'T', self.temperature+273.15,
-                                            'B', self.wet_bulb_temperature\
-                                            +273.15)
-        # Dew point temperature
-        self._dew_point_temperature = HAPropsSI('D', 'P', self.pressure*1e5,
+        # The use of dry and wet bulb temperatures being usually quite slow with
+        # CoolProp, the option fast_computation can be used here when a large
+        # amount of temperature values is involved
+        if not self.fast_computation:
+            # Calculation of the corresponding relative humidity, using the
+            # CoolProp package
+            self._relative_humidity = HAPropsSI('R', 
+                                                'P', self.pressure*1e5,
                                                 'T', self.temperature+273.15,
                                                 'B', self.wet_bulb_temperature\
-                                                +273.15)-273.15
-        # Specific enthalpy, in kJ/kg
-        self._specific_enthalpy = HAPropsSI('H', 'P', self.pressure*1e5,
-                                            'T', self.temperature+273.15,
-                                            'B', self.wet_bulb_temperature\
-                                            +273.15)*1e-3 
-        # Specific volume, in m^3/kg
-        self._specific_volume = HAPropsSI('V', 'P', self.pressure*1e5,
-                                          'T', self.temperature+273.15,
-                                          'B', self.wet_bulb_temperature\
-                                          +273.15)
+                                                +273.15)
+            # Calculation of the corresponding specific humidity value
+            self._specific_humidity = HAPropsSI('W', 'P', self.pressure*1e5,
+                                                'T', self.temperature+273.15,
+                                                'B', self.wet_bulb_temperature\
+                                                +273.15)
+            # Dew point temperature
+            self._dew_point_temperature = HAPropsSI('D', 'P', self.pressure*1e5,
+                                                    'T',\
+                                                    self.temperature+273.15,
+                                                    'B',\
+                                                    self.wet_bulb_temperature\
+                                                    +273.15)-273.15
+            # Specific enthalpy, in kJ/kg
+            self._specific_enthalpy = HAPropsSI('H', 'P', self.pressure*1e5,
+                                                'T', self.temperature+273.15,
+                                                'B', self.wet_bulb_temperature\
+                                                +273.15)*1e-3 
+            # Specific volume, in m^3/kg
+            self._specific_volume = HAPropsSI('V', 'P', self.pressure*1e5,
+                                              'T', self.temperature+273.15,
+                                              'B', self.wet_bulb_temperature\
+                                              +273.15)
+        else:
+            # When fast computation is called, relative humidity is computed
+            # in a simplified way, starting with the relative humidity 
+            psatw = self.__equilibrium_vapor_pressure(self.wet_bulb_temperature)
+            psatd = self.__equilibrium_vapor_pressure(self.temperature)
+            pvap = psatw-6.4669e-4*self.pressure*1e5*\
+                    (self.temperature-self.wet_bulb_temperature)
+            self._relative_humidity = pvap/psatd
+            # Specific humidity, see [1, page 6.10]
+            self._specific_humidity = ALPHAW*pvap/(self.pressure*1e5-pvap)
+            # Dew point temperature, see [1, page 6.10]
+            lnpvap = np.log(pvap*1e-3)
+            if self.temperature => 0:
+                self._dew_point_temperature = 6.54+14.526*lnpvap\
+                        +0.7389*pow(lnpvap,2)+0.09486*pow(lnpvap,3)\
+                        +0.4569*pow(pvap*1e-3,0.1984)
+            else:
+                self._dew_point_temperature = 6.09+12.608*lnpvap\
+                        +0.4959*pow(lnpvap,2)
+            # Specific enthalpy, in kJ/kg, see [1, page 6.9]
+            self._specific_enthalpy = 1.006*self.temperature\
+                    +self.specific_humidity*(1.805*self.temperature+2501)
+            # Specific volume, in m^3/kg, using the ideal gas law
+            self._specific_volume = 461.24*(ALPHAW+self.specific_humidity)*\
+                    (273.15+self.temperature)/((1+self.specific_humidity)*\
+                                               self.pressure*1e5)
     @property
     def BT(self):
         """
@@ -750,3 +806,8 @@ if __name__ == '__main__':
 #                if isinstance(value, int):
 #                    value = float(value)
 #                self._temperature = value
+
+# ==== References =============================================================
+#
+# [1] “ASHRAE Handbook : Fundamentals” (2001). In : American Society of Heating,
+# Refrigerating and Air-Conditioning Engineers. Chap. 6 : Psychrometrics.
