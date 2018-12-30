@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Python package dedicated to calculations dealing with moist air and HVAC
-application, based on the CoolProp package (http://www.coolprop.org/).
+application, mostly based on the CoolProp package (http://www.coolprop.org/).
 
 Author: alexandre.vaudrey@gmail.com
 """
@@ -29,17 +29,14 @@ import numpy as np
 from CoolProp.CoolProp import HAPropsSI
 # Value of one atmosphere in bar
 ATM = 1.01325
+# Specific heats at constant pressure of dry air and water vapor, in [J/(kg.K)]
+DRY_AIR_CP, WATER_VAPOR_CP = 1004., 1805.
+# Specific gas constants of dry air and water vapor, in [J/(kg.K)]
+DRY_AIR_R, WATER_VAPOR_R = 287., 462.
 # Ratio of the water molar mass on the dry air one
-ALPHAW = 0.621957
-
-# Dictionnary of properties
-properties = {'R':'relative_humidity',
-              'W':'specific_humidity',
-              'T':'temperature',
-              'B':'wet_bulb_temperature',
-              'D':'dew_point_temperature',
-              'H':'specific_enthalpy',
-              'P':'pressure'}
+ALPHAW = DRY_AIR_R/WATER_VAPOR_R
+# Water specific enthalpy of vaporization, in [J/(kg.K)]
+WATER_LW = 2501e+3
 
 single_parameter_set_message = "At least two complementary properties of moist air are required to unambiguously identify the latter, any sole parameter can then not be used for so."
 
@@ -117,6 +114,19 @@ class MoistAir(object):
         # on a temperature range such as 5°C < T < 100°C. This equation is used
         # when fast computation are required.
         return 1e5*np.exp(11.78*(temperature-99.64)/(temperature+230))
+    @staticmethod
+    def __logmeantemperature(temp1, temp2):
+        """
+        Log mean temperature of temperature temp1 and temp2, in K, with both
+        temperature entered in °C.
+        """
+        # This function is used for example in the calculation of the specific
+        # thermal exergy of moist air.
+        if temp1 == temp2:
+            lmtemp = temp1+273.15
+        else:
+            lmtemp = (temp1-temp2)/np.log((temp1+273.15)/(temp2+273.15))
+        return lmtemp
     # ==== Single properties of moist air =====================================
     # At least two values being required to identify unambiguously the state of
     # a given moist air, any new moist air must be entered thanks to a couple of
@@ -325,14 +335,15 @@ class MoistAir(object):
             # in a simplified way, starting with the relative humidity 
             psatw = self.__equilibrium_vapor_pressure(self.wet_bulb_temperature)
             psatd = self.__equilibrium_vapor_pressure(self.temperature)
-            pvap = psatw-6.4669e-4*self.pressure*1e5*\
+            beta = DRY_AIR_CP/(ALPHAW*WATER_LW)
+            pvap = psatw-beta*self.pressure*1e5*\
                     (self.temperature-self.wet_bulb_temperature)
             self._relative_humidity = pvap/psatd
             # Specific humidity, see [1, page 6.10]
             self._specific_humidity = ALPHAW*pvap/(self.pressure*1e5-pvap)
             # Dew point temperature, see [1, page 6.10]
             lnpvap = np.log(pvap*1e-3)
-            if self.temperature => 0:
+            if self.temperature >= 0:
                 self._dew_point_temperature = 6.54+14.526*lnpvap\
                         +0.7389*pow(lnpvap,2)+0.09486*pow(lnpvap,3)\
                         +0.4569*pow(pvap*1e-3,0.1984)
@@ -340,12 +351,13 @@ class MoistAir(object):
                 self._dew_point_temperature = 6.09+12.608*lnpvap\
                         +0.4959*pow(lnpvap,2)
             # Specific enthalpy, in kJ/kg, see [1, page 6.9]
-            self._specific_enthalpy = 1.006*self.temperature\
-                    +self.specific_humidity*(1.805*self.temperature+2501)
+            self._specific_enthalpy = (DRY_AIR_CP*self.temperature\
+                    +self.specific_humidity*(WATER_VAPOR_CP*self.temperature\
+                                            +WATER_LW))*1e-3
             # Specific volume, in m^3/kg, using the ideal gas law
-            self._specific_volume = 461.24*(ALPHAW+self.specific_humidity)*\
-                    (273.15+self.temperature)/((1+self.specific_humidity)*\
-                                               self.pressure*1e5)
+            self._specific_volume = WATER_VAPOR_R\
+                    *(ALPHAW+self.specific_humidity)*(273.15+self.temperature)\
+                    /((1+self.specific_humidity)*self.pressure*1e5)
     @property
     def BT(self):
         """
@@ -734,7 +746,9 @@ class MoistAir(object):
     @property
     def DW(self):
         """
-        Dew point temperature and specific humidity as entered properties of the
+        Dew point temperature and specific humidity as entered properties(self.specific_humidity*WATER_VAPOR_R\
+                *np.log(self.specific_humidity/ref_state.specific_humidity)\
+                -(DRY_AIR_R+self.specific_humidity of the
         moist air.
         """
         return self.dew_point_temperature, self.specific_humidity
@@ -789,12 +803,64 @@ class MoistAir(object):
     @WD.setter
     def WD(self, values):
         self.DW = values[::-1]
+    # ==== Usual class methods ================================================
+    def specific_thermal_exergy(self, ref_state):
+        """
+        Specific thermal exergy of moist air, in kJ/kg, regarding to a reference
+        state represented by its corresponding MoistAir object.
+        """
+        # Check if the entered reference state is a MoistAir object
+        if type(ref_state) != MoistAir:
+            raise TypeError("Reference state must be a MoisAir object!")
+        # Calculation of the Carnot factor
+        Tml0 = self.__logmeantemperature(self.temperature,\
+                                         ref_state.temperature)
+        CarnotFactor = 1-(ref_state.temperature+273.15)/Tml0
+        # And specific thermal exergy
+        return 1e-3*(DRY_AIR_CP+self.specific_humidity*WATER_VAPOR_CP)\
+                *(self.temperature-ref_state.temperature)*CarnotFactor
+    def specific_mechanical_exergy(self, ref_state):
+        """
+        Specific mechanical exergy of moist air, in kJ/kg, regarding to a
+        reference state represented by its corresponding MoistAir object.
+        """
+        # Check if the entered reference state is a MoistAir object
+        if type(ref_state) != MoistAir:
+            raise TypeError("Reference state must be a MoisAir object!")
+        return (DRY_AIR_R+self.specific_humidity*WATER_VAPOR_R)\
+                *(ref_state.temperature+273.15)\
+                *np.log(self.pressure/ref_state.pressure)*1e-3
+    def specific_chemical_exergy(self, ref_state):
+        """
+        Specific chemical exergy of moist air, in kJ/kg, regarding to a
+        reference state represented by its corresponding MoistAir object.
+        """
+        # Check if the entered reference state is a MoistAir object
+        if type(ref_state) != MoistAir:
+            raise TypeError("Reference state must be a MoisAir object!")
+        # Specific humidities of each moist air
+        w , w0 = self.specific_humidity, ref_state.specific_humidity
+        T0 = ref_state.temperature+273.15
+        return T0*(w*WATER_VAPOR_R*np.log(w/w0)-(DRY_AIR_R+w*WATER_VAPOR_R)\
+                   *np.log((w+ALPHAW)/(w0+ALPHAW)))*1e-3
+    def specific_exergy(self, ref_state):
+        """
+        Specific exergy of moist air, in kJ/kg, regarding to a reference state
+        represented by its corresponding MoistAir object.
+        """
+        # Check if the entered reference state is a MoistAir object
+        if type(ref_state) != MoistAir:
+            raise TypeError("Reference state must be a MoisAir object!")
+        return self.specific_thermal_exergy(ref_state)\
+                +self.specific_mechanical_exergy(ref_state)\
+                +self.specific_chemical_exergy(ref_state)
+
 
 if __name__ == '__main__':
     inside = MoistAir()
-#    inside.TR = 0.0, 0.8
-#    print(inside.specific_humidity)
-
+    inside.TW = 20.0, 7e-3
+    outside = MoistAir()
+    outside.TW = 0.0, 3e-3
 #        if not isinstance(value, float) or not isinstance(value, int):
 #            print(type(value))
 #            raise TypeError("Numerical value expected")
