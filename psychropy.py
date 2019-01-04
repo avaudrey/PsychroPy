@@ -861,17 +861,6 @@ if __name__ == '__main__':
     inside.TW = 20.0, 7e-3
     outside = MoistAir()
     outside.TW = 0.0, 3e-3
-#        if not isinstance(value, float) or not isinstance(value, int):
-#            print(type(value))
-#            raise TypeError("Numerical value expected")
-#        else:
-#            # TODO : check the actual available temperature range of the
-#            # CoolProp package.
-#            if value <= -273.15:
-#            else:
-#                if isinstance(value, int):
-#                    value = float(value)
-#                self._temperature = value
 
 # ==== References =============================================================
 #
