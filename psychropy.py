@@ -32,7 +32,7 @@ ATM = 1.01325
 # Specific heats at constant pressure of dry air and water vapor, in [J/(kg.K)]
 DRY_AIR_CP, WATER_VAPOR_CP = 1004., 1805.
 # Specific gas constants of dry air and water vapor, in [J/(kg.K)]
-DRY_AIR_R, WATER_VAPOR_R = 287., 462.
+DRY_AIR_R, WATER_VAPOR_R = 287.055, 462.52
 # Ratio of the water molar mass on the dry air one
 ALPHAW = DRY_AIR_R/WATER_VAPOR_R
 # Water specific enthalpy of vaporization, in [J/(kg.K)]
@@ -105,15 +105,18 @@ class MoistAir(object):
     @staticmethod
     def __equilibrium_vapor_pressure(temperature):
         """
-        Saturation or equilibrium pressure of water, in Pa.
+        Saturation or equilibrium pressure of water, in Pa. Correlation
+        extracted from the ASHRAE Handbook.
         """
-        # TODO: Find the original reference where this equation actually comes
-        # from.
-        # [ref?] equation that gives a value of the equilibrium pressure of
-        # water with a maximum difference of 0.6% (when compared with CoolProp)
-        # on a temperature range such as 5°C < T < 100°C. This equation is used
-        # when fast computation are required.
-        return 1e5*np.exp(11.78*(temperature-99.64)/(temperature+230))
+        C = np.array([-5.8002206e+3, 1.3914993, -4.8640239e-2,
+                      4.176476e-5, -1.4452093e-8, 6.5459673])
+        # Equation which gives the equilibrium pressure of water over its liquid
+        # phase on a temperature range such as 0°C < T < 200°C. This equation is
+        # used when fast computation are required.
+        lnpeq = C[0]/(temperature+273.15)+C[1]+C[2]*(temperature+273.15)\
+                +C[3]*pow(temperature+273.15,2)+C[4]*pow(temperature+273.15,3)\
+                +C[5]*np.log(temperature+273.15)
+        return np.exp(lnpeq)
     @staticmethod
     def __logmeantemperature(temp1, temp2):
         """
@@ -223,7 +226,7 @@ class MoistAir(object):
         """
         Specific volume of moist air, in m^3/kg.
         """
-        return self._specific_enthalpy
+        return self._specific_volume
     @specific_volume.setter
     def specific_volume(self):
         print(single_parameter_set_message)
@@ -854,7 +857,6 @@ class MoistAir(object):
         return self.specific_thermal_exergy(ref_state)\
                 +self.specific_mechanical_exergy(ref_state)\
                 +self.specific_chemical_exergy(ref_state)
-
 
 if __name__ == '__main__':
     inside = MoistAir()
