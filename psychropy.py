@@ -807,9 +807,17 @@ class MoistAir(object):
     def WD(self, values):
         self.DW = values[::-1]
     # ==== Usual class methods ================================================
+    def maximum_specific_humidity(self):
+        """
+        Maximum value of the humidity content for a given air, corresponding to
+        a 100% relative humidity.
+        """
+        w0sat = HAPropsSI('W', 'T', self.temperature+273.15, 'R', 1.0,\
+                          'P', self.pressure*1e5)
+        return w0sat
     def specific_thermal_exergy(self, ref_state):
         """
-        Specific thermal exergy of moist air, in kJ/kg, regarding to a reference
+        Specific thermal exergy of moist air, in J/kg, regarding to a reference
         state represented by its corresponding MoistAir object.
         """
         # Check if the entered reference state is a MoistAir object
@@ -820,11 +828,11 @@ class MoistAir(object):
                                          ref_state.temperature)
         CarnotFactor = 1-(ref_state.temperature+273.15)/Tml0
         # And specific thermal exergy
-        return 1e-3*(DRY_AIR_CP+self.specific_humidity*WATER_VAPOR_CP)\
+        return (DRY_AIR_CP+self.specific_humidity*WATER_VAPOR_CP)\
                 *(self.temperature-ref_state.temperature)*CarnotFactor
     def specific_mechanical_exergy(self, ref_state):
         """
-        Specific mechanical exergy of moist air, in kJ/kg, regarding to a
+        Specific mechanical exergy of moist air, in J/kg, regarding to a
         reference state represented by its corresponding MoistAir object.
         """
         # Check if the entered reference state is a MoistAir object
@@ -832,23 +840,25 @@ class MoistAir(object):
             raise TypeError("Reference state must be a MoisAir object!")
         return (DRY_AIR_R+self.specific_humidity*WATER_VAPOR_R)\
                 *(ref_state.temperature+273.15)\
-                *np.log(self.pressure/ref_state.pressure)*1e-3
+                *np.log(self.pressure/ref_state.pressure)
     def specific_chemical_exergy(self, ref_state):
         """
-        Specific chemical exergy of moist air, in kJ/kg, regarding to a
+        Specific chemical exergy of moist air, in J/kg, regarding to a
         reference state represented by its corresponding MoistAir object.
         """
         # Check if the entered reference state is a MoistAir object
         if type(ref_state) != MoistAir:
-            raise TypeError("Reference state must be a MoisAir object!")
-        # Specific humidities of each moist air
-        w , w0 = self.specific_humidity, ref_state.specific_humidity
+            raise TypeError("Reference state must be a MoistAir object!")
+        # Specific humidities of the concerned moist air
+        w = self.specific_humidity
+        # And maximum specific humidity of the reference moist air
+        w0sat = ref_state.maximum_specific_humidity()
         T0 = ref_state.temperature+273.15
-        return T0*(w*WATER_VAPOR_R*np.log(w/w0)-(DRY_AIR_R+w*WATER_VAPOR_R)\
-                   *np.log((w+ALPHAW)/(w0+ALPHAW)))*1e-3
+        return T0*(w*WATER_VAPOR_R*np.log(w/w0sat)-(DRY_AIR_R+w*WATER_VAPOR_R)\
+                   *np.log((w+ALPHAW)/(w0sat+ALPHAW)))
     def specific_exergy(self, ref_state):
         """
-        Specific exergy of moist air, in kJ/kg, regarding to a reference state
+        Specific exergy of moist air, in J/kg, regarding to a reference state
         represented by its corresponding MoistAir object.
         """
         # Check if the entered reference state is a MoistAir object
