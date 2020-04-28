@@ -30,7 +30,7 @@ from CoolProp.CoolProp import HAPropsSI
 # Value of one atmosphere in bar
 ATM = 1.01325
 # Specific heats at constant pressure of dry air and water vapor, in [J/(kg.K)]
-DRY_AIR_CP, WATER_VAPOR_CP = 1004., 1805.
+DRY_AIR_CP, WATER_VAPOR_CP, LIQUID_WATER_CP = 1004., 1805., 4186.
 # Specific gas constants of dry air and water vapor, in [J/(kg.K)]
 DRY_AIR_R, WATER_VAPOR_R = 287.055, 462.52
 # Ratio of the water molar mass on the dry air one
@@ -807,6 +807,12 @@ class MoistAir(object):
     def WD(self, values):
         self.DW = values[::-1]
     # ==== Usual class methods ================================================
+    def absolute_humidity(self):
+        """
+        Absolute humidity in kilogramme of water vapour per cubic meter of dry
+        air.
+        """
+        return self.specific_humidity/self.specific_volume
     def maximum_specific_humidity(self):
         """
         Maximum value of the humidity content for a given air, corresponding to
