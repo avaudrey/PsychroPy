@@ -148,6 +148,21 @@ class MoistAir(object):
         else:
             lmtemp = (temp1-temp2)/np.log((temp1+273.15)/(temp2+273.15))
         return lmtemp
+#    @classmethod
+    def _TBtoW(self, D, B):
+        """
+        Fast calculation, using the ASHRAE method, of the specific humidity
+        using the dry and wet bulb temperature measurements.
+        """
+        # Calculation of the equilibrium pressure of water at the dry bulb
+        # temperature.
+        psatw = self.__equilibrium_vapor_pressure(B)
+        # Maximum specific humidity at the wet bulb temperature
+        wsatw = ALPHAW*psatw/(self.pressure*1e5-psatw)
+        # Calculation of specific humidity using [1, page 6.9, relation (35)]
+        W = ((WATER_LW-(LIQUID_WATER_CP-WATER_VAPOR_CP)*B)*wsatw-\
+             DRY_AIR_CP*(D-B))/(WATER_LW+WATER_VAPOR_CP*D-LIQUID_WATER_CP*B)
+        return W
     # ==== Single properties of moist air =====================================
     # At least two values being required to identify unambiguously the state of
     # a given moist air, any new moist air must be entered thanks to a couple of
@@ -354,17 +369,8 @@ class MoistAir(object):
         else:
             # When fast computation is called, specific humidity is computed
             # in a simplified way, according to the ASHRAE method .
-            psatw = self.__equilibrium_vapor_pressure(self.wet_bulb_temperature)
-            # Maximum specific humidity at the wet bulb temperature
-            wsatw = ALPHAW*psatw/(self.pressure*1e5-psatw)
-            # Relation [1, page 6.9, relation (35)]
-            self._specific_humidity = ((WATER_LW-\
-                                       (LIQUID_WATER_CP-WATER_VAPOR_CP)*\
-                                       self.wet_bulb_temperature)*wsatw-\
-                                      DRY_AIR_CP*(self.temperature-\
-                                                  self.wet_bulb_temperature))/\
-                    (WATER_LW+WATER_VAPOR_CP*self.temperature-\
-                     LIQUID_WATER_CP*self.wet_bulb_temperature)
+            self._specific_humidity = self._TBtoW(self.temperature,\
+                                                  self.wet_bulb_temperature)
             # Partial pressure of water vapour
             pvap = self.pressure*1e5*self.specific_humidity/\
                     (self.specific_humidity+ALPHAW)
@@ -407,6 +413,7 @@ class MoistAir(object):
         return self.temperature, self.dew_point_temperature
     @TD.setter
     def TD(self, values):
+        # TODO : fast computation must be implemented here.
         # Set of the temperature value
         self._temperature = values[0]
         # Check if the entered dew point temperature value is lower than the dry
@@ -460,6 +467,7 @@ class MoistAir(object):
         return self.relative_humidity, self.wet_bulb_temperature
     @RB.setter
     def RB(self, values):
+        # TODO : fast computation must be implemented here.
         # Set of the wet bulb temperature value
         self._wet_bulb_temperature = values[1]
         # Check if the entered value of relative humidity is between 0 and 1
@@ -512,6 +520,7 @@ class MoistAir(object):
         return self.relative_humidity, self.dew_point_temperature
     @RD.setter
     def RD(self, values):
+        # TODO : fast computation must be implemented here.
         # Set of the dew point temperature value
         self._dew_point_temperature = values[1]
         # Check if the entered value of relative humidity is between 0 and 1
@@ -564,6 +573,7 @@ class MoistAir(object):
         return self.wet_bulb_temperature, self.dew_point_temperature
     @BD.setter
     def BD(self, values):
+        # TODO : fast computation must be implemented here.
         # Set of the wet bulb temperature value
         self._wet_bulb_temperature = values[0]
         # Set of the dew point temperature value
@@ -616,6 +626,7 @@ class MoistAir(object):
         return self.temperature, self.specific_humidity
     @TW.setter
     def TW(self, values):
+        # TODO : fast computation must be implemented here.
         # Set of the dry temperature value
         self._temperature = values[0] 
         # Check if the entered value of specific humidity makes sense, so if it
@@ -672,6 +683,7 @@ class MoistAir(object):
         return self.relative_humidity, self.specific_humidity
     @RW.setter
     def RW(self, values):
+        # TODO : fast computation must be implemented here.
         # Check if the entered value of relative humidity is between 0 and 1
         if (values[0] < 0) or (values[0] > 1):
             raise ValueError("Relative humidity must be between 0% and 100%!")
@@ -725,6 +737,7 @@ class MoistAir(object):
         return self.wet_bulb_temperature, self.specific_humidity
     @BW.setter
     def BW(self, values):
+        # TODO : fast computation must be implemented here.
         # Set of the wet bulb temperature value
         self._wet_bulb_temperature = values[0] 
         # Check if the entered value of specific humidity makes sense, so if it
@@ -785,6 +798,7 @@ class MoistAir(object):
         return self.dew_point_temperature, self.specific_humidity
     @DW.setter
     def DW(self, values):
+        # TODO : fast computation must be implemented here.
         # Set of the dew point temperature value
         self._dew_point_temperature = values[0] 
         # Check if the entered value of specific humidity makes sense, so if it
