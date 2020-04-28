@@ -352,16 +352,26 @@ class MoistAir(object):
                                               'B', self.wet_bulb_temperature\
                                               +273.15)
         else:
-            # When fast computation is called, relative humidity is computed
-            # in a simplified way, starting with the relative humidity 
+            # When fast computation is called, specific humidity is computed
+            # in a simplified way, according to the ASHRAE method .
             psatw = self.__equilibrium_vapor_pressure(self.wet_bulb_temperature)
+            # Maximum specific humidity at the wet bulb temperature
+            wsatw = ALPHAW*psatw/(self.pressure*1e5-psatw)
+            # Relation [1, page 6.9, relation (35)]
+            self._specific_humidity = ((WATER_LW-\
+                                       (LIQUID_WATER_CP-WATER_VAPOR_CP)*\
+                                       self.wet_bulb_temperature)*wsatw-\
+                                      DRY_AIR_CP*(self.temperature-\
+                                                  self.wet_bulb_temperature))/\
+                    (WATER_LW+WATER_VAPOR_CP*self.temperature-\
+                     LIQUID_WATER_CP*self.wet_bulb_temperature)
+            # Partial pressure of water vapour
+            pvap = self.pressure*1e5*self.specific_humidity/\
+                    (self.specific_humidity+ALPHAW)
+            # Equilibrium pressure of water vapour at the dry temperature
             psatd = self.__equilibrium_vapor_pressure(self.temperature)
-            beta = DRY_AIR_CP/(ALPHAW*WATER_LW)
-            pvap = psatw-beta*self.pressure*1e5*\
-                    (self.temperature-self.wet_bulb_temperature)
+            # Relative humidity
             self._relative_humidity = pvap/psatd
-            # Specific humidity, see [1, page 6.10]
-            self._specific_humidity = ALPHAW*pvap/(self.pressure*1e5-pvap)
             # Dew point temperature, see [1, page 6.10]
             lnpvap = np.log(pvap*1e-3)
             if self.temperature >= 0:
