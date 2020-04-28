@@ -108,14 +108,32 @@ class MoistAir(object):
         Saturation or equilibrium pressure of water, in Pa. Correlation
         extracted from the ASHRAE Handbook.
         """
-        C = np.array([-5.8002206e+3, 1.3914993, -4.8640239e-2,
-                      4.176476e-5, -1.4452093e-8, 6.5459673])
-        # Equation which gives the equilibrium pressure of water over its liquid
-        # phase on a temperature range such as 0°C < T < 200°C. This equation is
-        # used when fast computation are required.
-        lnpeq = C[0]/(temperature+273.15)+C[1]+C[2]*(temperature+273.15)\
-                +C[3]*pow(temperature+273.15,2)+C[4]*pow(temperature+273.15,3)\
-                +C[5]*np.log(temperature+273.15)
+        if (temperature <= 0):
+            Cneg = np.array([-5.6745359e+3, 6.3925247, -9.677843e-3,
+                            6.2215701e-7, 2.0747825e-9, -9.484024e-13,
+                            4.1635019])
+            # Equation which gives the equilibrium pressure of water over its
+            # solid phase on a temperature range such as -100°C < T < 0°C. This
+            # equation is used when fast computation are required.
+            lnpeq = Cneg[0]/(temperature+273.15)+\
+                    Cneg[1]+\
+                    Cneg[2]*(temperature+273.15)+\
+                    Cneg[3]*pow(temperature+273.15,2)+\
+                    Cneg[4]*pow(temperature+273.15,3)+\
+                    Cneg[5]*pow(temperature+273.15,4)+\
+                    Cneg[6]*np.log(temperature+273.15)
+        else:
+            Cpos = np.array([-5.8002206e+3, 1.3914993, -4.8640239e-2,
+                             4.176476e-5, -1.4452093e-8, 6.5459673])
+            # Equation which gives the equilibrium pressure of water over its
+            # liquid phase on a temperature range such as 0°C < T < 200°C. This
+            # equation is used when fast computation are required.
+            lnpeq = Cpos[0]/(temperature+273.15)+\
+                    Cpos[1]+\
+                    Cpos[2]*(temperature+273.15)+\
+                    Cpos[3]*pow(temperature+273.15,2)+\
+                    Cpos[4]*pow(temperature+273.15,3)+\
+                    Cpos[5]*np.log(temperature+273.15)
         return np.exp(lnpeq)
     @staticmethod
     def __logmeantemperature(temp1, temp2):
