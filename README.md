@@ -34,7 +34,7 @@ humidity of 50%. To manipulate such an air, we can instance an object from the
 class `MoistAir`, called for example `inside`, which will contain what we know
 about this air: 
 ```python
-import psychropy as psp
+from psychrometry import psychropy as psp
 inside =  psp.MoistAir()
 # Known parameters of outside air
 inside.TR = 20.0 + 273.15, 0.5
