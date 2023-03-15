@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# flake8: noqa
 """
 Python package dedicated to calculations dealing with moist air and HVAC
 application, mostly based on the CoolProp package (http://www.coolprop.org/).
@@ -7,7 +8,7 @@ application, mostly based on the CoolProp package (http://www.coolprop.org/).
 Author: alexandre.vaudrey@gmail.com
 """
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #   Copyright (C) 2018 <Alexandre Vaudrey>                                  |
 #                                                                           |
 #   This program is free software: you can redistribute it and/or modify    |
@@ -22,10 +23,9 @@ Author: alexandre.vaudrey@gmail.com
 #                                                                           |
 #   You should have received a copy of the GNU General Public License       |
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.   |
-#---------------------------------------------------------------------------|
+# --------------------------------------------------------------------------|
 
-import numpy as np
-# Properties of humid air
+import numpy as np  # Properties of humid air
 from CoolProp.CoolProp import HAPropsSI
 # Value of one atmosphere in bar
 ATM = 1.01325
