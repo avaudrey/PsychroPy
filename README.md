@@ -37,12 +37,12 @@ about this air:
 import psychropy as psp
 inside =  psp.MoistAir()
 # Known parameters of outside air
-inside.TR = 20.0, 0.5
+inside.TR = 20.0 + 273.15, 0.5
 # Requested specific humidity and enthalpy of the inside
 Wi, Hi = inside.specific_humidity, inside.specific_enthalpy
 ```
 The results are a specific humidity `Wi = 7.29e-3` and a specific enthalpy `Hi = 38.62` (in kJ/kg). Let us emphasize that:
-- Temperature is always expressed in [degree Celcius](https://en.wikipedia.org/wiki/Celsius).
+- Temperature is always expressed in [Kelvin](https://en.wikipedia.org/wiki/Kelvin).
 - Parameters of the air are entered using a notation close the one used by [CANTERA](https://cantera.org/), and mentioning explicitely the two concerned parameters, here `inside.TR` for temperature and relative humidity. The same parameters may be entered in the reverse order using `inside.RT`, or using different ways to quantity humidity: `inside.TB`, `inside.DT`, `inside.TW`, and so on.
 - Specific humidity is expressed in kg of water vapour per kilogram of dry air, so dimensionless. 
 - Specific enthalpy is expressed in kJ/kg or dry air.
@@ -50,9 +50,9 @@ If the HVAC system is equipped with two temperature sensors, a usual one (that g
 ```python
 outside = psp.MoistAir()
 # Outside pressure of 1 bar
-outside.pressure = 1.0
+outside.pressure = 1.0 * 1e5
 # Measured dry temperature of 5°C and Wet-Bulb one of 3°C
-outside.TB = 5.0, 3.0
+outside.TB = 5.0 + 273.15, 3.0 + 273.15
 # Outside specific humidity and enthalpy 
 W0, H0 = outside.specific_humidity, outside.specific_enthalpy
 ```
